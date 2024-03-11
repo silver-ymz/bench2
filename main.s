@@ -1,7 +1,7 @@
 	.text
 	.file	"main.c"
 	.globl	main                            // -- Begin function main
-	.p2align	4
+	.p2align	2
 	.type	main,@function
 main:                                   // @main
 	.cfi_startproc
@@ -32,9 +32,9 @@ main:                                   // @main
 	.cfi_offset b9, -112
 	.cfi_remember_state
 	sub	sp, sp, #3, lsl #12             // =12288
-	sub	sp, sp, #3760
-	ldr	x0, [x1, #8]
+	sub	sp, sp, #3776
 	mov	x19, x1
+	ldr	x0, [x1, #8]
 	mov	x1, xzr
 	mov	w2, #10                         // =0xa
 	bl	strtol
@@ -46,29 +46,28 @@ main:                                   // @main
 	cmp	w21, #1000
 	b.hs	.LBB0_34
 // %bb.1:
-	lsl	x8, x0, #32
-	sxtw	x22, w0
+	lsl	x9, x0, #32
+	sxtw	x8, w0
 	mov	x0, xzr
-	str	x8, [sp]                        // 8-byte Folded Spill
+	stp	x9, x8, [sp, #8]                // 16-byte Folded Spill
 	bl	time
                                         // kill: def $w0 killed $w0 killed $x0
 	bl	srand
 	mov	w8, #18140                      // =0x46dc
 	add	x25, sp, #2, lsl #12            // =8192
+	movk	w8, #3, lsl #16
 	movi	v8.2s, #48, lsl #24
 	add	x27, sp, #1, lsl #12            // =4096
 	mov	x24, xzr
+	smull	x21, w21, w8
 	mov	x19, xzr
 	mov	x20, xzr
-	add	x26, sp, #4040
-	add	x28, sp, #40
+	add	x25, x25, #3864
+	add	x26, sp, #4056
+	add	x27, x27, #3960
+	add	x28, sp, #56
 	mov	w23, #10000                     // =0x2710
-	movk	w8, #3, lsl #16
-	add	x25, x25, #3848
-	add	x27, x27, #3944
-	smull	x21, w21, w8
 	b	.LBB0_3
-	.p2align	5, , 16
 .LBB0_2:                                //   in Loop: Header=BB0_3 Depth=1
 	add	x24, x24, #1
 	cmp	x24, x23
@@ -81,12 +80,13 @@ main:                                   // @main
 	cmp	x20, #999
 	b.hi	.LBB0_6
 // %bb.5:                               //   in Loop: Header=BB0_3 Depth=1
-	str	w24, [x25, x20, lsl #2]
+	lsl	x22, x20, #2
+	str	w24, [x25, x22]
 	bl	rand
 	scvtf	s0, w0
-	fmul	s0, s0, s8
-	str	s0, [x26, x20, lsl #2]
 	add	x20, x20, #1
+	fmul	s0, s0, s8
+	str	s0, [x26, x22]
 .LBB0_6:                                //   in Loop: Header=BB0_3 Depth=1
 	bl	rand
 	cmp	x21, w0, sxtw
@@ -95,36 +95,37 @@ main:                                   // @main
 	cmp	x19, #999
 	b.hi	.LBB0_2
 // %bb.8:                               //   in Loop: Header=BB0_3 Depth=1
-	str	w24, [x27, x19, lsl #2]
+	lsl	x22, x19, #2
+	str	w24, [x27, x22]
 	bl	rand
 	scvtf	s0, w0
-	fmul	s0, s0, s8
-	str	s0, [x28, x19, lsl #2]
 	add	x19, x19, #1
+	fmul	s0, s0, s8
+	str	s0, [x28, x22]
 	b	.LBB0_2
 .LBB0_9:
-	ldr	x23, [sp]                       // 8-byte Folded Reload
+	ldr	x23, [sp, #8]                   // 8-byte Folded Reload
+	stp	xzr, xzr, [sp, #40]
 	stp	xzr, xzr, [sp, #24]
-	stp	xzr, xzr, [sp, #8]
 	cbz	x23, .LBB0_16
 // %bb.10:
+	ldr	x22, [sp, #16]                  // 8-byte Folded Reload
 	cmp	x22, #1
 	csinc	x21, x22, xzr, hi
-	.p2align	5, , 16
 .LBB0_11:                               // =>This Inner Loop Header: Depth=1
 	add	x0, sp, #2, lsl #12             // =8192
 	add	x1, sp, #1, lsl #12             // =4096
-	add	x2, sp, #4040
-	add	x3, sp, #40
+	add	x0, x0, #3864
+	add	x1, x1, #3960
+	add	x2, sp, #4056
+	add	x3, sp, #56
 	mov	x4, x20
 	mov	x5, x19
-	add	x0, x0, #3848
-	add	x1, x1, #3944
 	bl	v_sparse_dot
 	subs	x21, x21, #1
 	b.ne	.LBB0_11
 // %bb.12:
-	add	x1, sp, #24
+	add	x1, sp, #40
 	mov	w0, #1                          // =0x1
 	fmov	s8, s0
 	bl	clock_gettime
@@ -132,16 +133,15 @@ main:                                   // @main
 // %bb.13:
 	cmp	x22, #1
 	csinc	x21, x22, xzr, hi
-	.p2align	5, , 16
 .LBB0_14:                               // =>This Inner Loop Header: Depth=1
 	add	x0, sp, #2, lsl #12             // =8192
 	add	x1, sp, #1, lsl #12             // =4096
-	add	x2, sp, #4040
-	add	x3, sp, #40
+	add	x0, x0, #3864
+	add	x1, x1, #3960
+	add	x2, sp, #4056
+	add	x3, sp, #56
 	mov	x4, x20
 	mov	x5, x19
-	add	x0, x0, #3848
-	add	x1, x1, #3944
 	bl	v_sparse_dot
 	subs	x21, x21, #1
 	b.ne	.LBB0_14
@@ -149,49 +149,49 @@ main:                                   // @main
 	fmov	s8, s0
 	b	.LBB0_17
 .LBB0_16:
+	add	x1, sp, #40
+	mov	w0, #1                          // =0x1
+	bl	clock_gettime
+	ldr	x22, [sp, #16]                  // 8-byte Folded Reload
+                                        // implicit-def: $s8
+.LBB0_17:
 	add	x1, sp, #24
 	mov	w0, #1                          // =0x1
 	bl	clock_gettime
-                                        // implicit-def: $s8
-.LBB0_17:
-	add	x1, sp, #8
-	mov	w0, #1                          // =0x1
-	bl	clock_gettime
-	ldp	x8, x9, [sp, #8]
-	ldp	x10, x11, [sp, #24]
+	ldp	x8, x9, [sp, #24]
 	ucvtf	d9, x22
-	fcvt	d0, s8
 	adrp	x0, .L.str.2
 	add	x0, x0, :lo12:.L.str.2
+	ldp	x10, x11, [sp, #40]
 	sub	x8, x8, x10
-	scvtf	d1, x8
-	sub	x8, x9, x11
-	scvtf	d2, x8
-	mov	x8, #225833675390976            // =0xcd6500000000
-	movk	x8, #16845, lsl #48
-	fmov	d3, x8
-	fmadd	d1, d1, d3, d2
-	fdiv	d1, d1, d9
+	mov	x10, #225833675390976           // =0xcd6500000000
+	sub	x9, x9, x11
+	movk	x10, #16845, lsl #48
+	scvtf	d0, x8
+	scvtf	d1, x9
+	fmov	d2, x10
+	fmadd	d0, d0, d2, d1
+	fdiv	d1, d0, d9
+	fcvt	d0, s8
 	bl	printf
 	cbz	x23, .LBB0_24
 // %bb.18:
 	cmp	x22, #1
 	csinc	x21, x22, xzr, hi
-	.p2align	5, , 16
 .LBB0_19:                               // =>This Inner Loop Header: Depth=1
 	add	x0, sp, #2, lsl #12             // =8192
 	add	x1, sp, #1, lsl #12             // =4096
-	add	x2, sp, #4040
-	add	x3, sp, #40
+	add	x0, x0, #3864
+	add	x1, x1, #3960
+	add	x2, sp, #4056
+	add	x3, sp, #56
 	mov	x4, x20
 	mov	x5, x19
-	add	x0, x0, #3848
-	add	x1, x1, #3944
 	bl	v_sparse_dot_omp
 	subs	x21, x21, #1
 	b.ne	.LBB0_19
 // %bb.20:
-	add	x1, sp, #24
+	add	x1, sp, #40
 	mov	w0, #1                          // =0x1
 	fmov	s8, s0
 	bl	clock_gettime
@@ -199,16 +199,15 @@ main:                                   // @main
 // %bb.21:
 	cmp	x22, #1
 	csinc	x21, x22, xzr, hi
-	.p2align	5, , 16
 .LBB0_22:                               // =>This Inner Loop Header: Depth=1
 	add	x0, sp, #2, lsl #12             // =8192
 	add	x1, sp, #1, lsl #12             // =4096
-	add	x2, sp, #4040
-	add	x3, sp, #40
+	add	x0, x0, #3864
+	add	x1, x1, #3960
+	add	x2, sp, #4056
+	add	x3, sp, #56
 	mov	x4, x20
 	mov	x5, x19
-	add	x0, x0, #3848
-	add	x1, x1, #3944
 	bl	v_sparse_dot_omp
 	subs	x21, x21, #1
 	b.ne	.LBB0_22
@@ -216,47 +215,46 @@ main:                                   // @main
 	fmov	s8, s0
 	b	.LBB0_25
 .LBB0_24:
-	add	x1, sp, #24
+	add	x1, sp, #40
 	mov	w0, #1                          // =0x1
 	bl	clock_gettime
 .LBB0_25:
-	add	x1, sp, #8
+	add	x1, sp, #24
 	mov	w0, #1                          // =0x1
 	bl	clock_gettime
-	ldp	x8, x9, [sp, #8]
-	ldp	x10, x11, [sp, #24]
-	fcvt	d0, s8
+	ldp	x8, x9, [sp, #24]
 	adrp	x0, .L.str.3
 	add	x0, x0, :lo12:.L.str.3
+	ldp	x10, x11, [sp, #40]
 	sub	x8, x8, x10
-	scvtf	d1, x8
-	sub	x8, x9, x11
-	scvtf	d2, x8
-	mov	x8, #225833675390976            // =0xcd6500000000
-	movk	x8, #16845, lsl #48
-	fmov	d3, x8
-	fmadd	d1, d1, d3, d2
-	fdiv	d1, d1, d9
+	mov	x10, #225833675390976           // =0xcd6500000000
+	sub	x9, x9, x11
+	movk	x10, #16845, lsl #48
+	scvtf	d0, x8
+	scvtf	d1, x9
+	fmov	d2, x10
+	fmadd	d0, d0, d2, d1
+	fdiv	d1, d0, d9
+	fcvt	d0, s8
 	bl	printf
 	cbz	x23, .LBB0_32
 // %bb.26:
 	cmp	x22, #1
 	csinc	x21, x22, xzr, hi
-	.p2align	5, , 16
 .LBB0_27:                               // =>This Inner Loop Header: Depth=1
 	add	x0, sp, #2, lsl #12             // =8192
 	add	x1, sp, #1, lsl #12             // =4096
-	add	x2, sp, #4040
-	add	x3, sp, #40
+	add	x0, x0, #3864
+	add	x1, x1, #3960
+	add	x2, sp, #4056
+	add	x3, sp, #56
 	mov	x4, x20
 	mov	x5, x19
-	add	x0, x0, #3848
-	add	x1, x1, #3944
 	bl	v_sparse_dot_sve
 	subs	x21, x21, #1
 	b.ne	.LBB0_27
 // %bb.28:
-	add	x1, sp, #24
+	add	x1, sp, #40
 	mov	w0, #1                          // =0x1
 	fmov	s8, s0
 	bl	clock_gettime
@@ -264,16 +262,15 @@ main:                                   // @main
 // %bb.29:
 	cmp	x22, #1
 	csinc	x21, x22, xzr, hi
-	.p2align	5, , 16
 .LBB0_30:                               // =>This Inner Loop Header: Depth=1
 	add	x0, sp, #2, lsl #12             // =8192
 	add	x1, sp, #1, lsl #12             // =4096
-	add	x2, sp, #4040
-	add	x3, sp, #40
+	add	x0, x0, #3864
+	add	x1, x1, #3960
+	add	x2, sp, #4056
+	add	x3, sp, #56
 	mov	x4, x20
 	mov	x5, x19
-	add	x0, x0, #3848
-	add	x1, x1, #3944
 	bl	v_sparse_dot_sve
 	subs	x21, x21, #1
 	b.ne	.LBB0_30
@@ -281,31 +278,31 @@ main:                                   // @main
 	fmov	s8, s0
 	b	.LBB0_33
 .LBB0_32:
-	add	x1, sp, #24
+	add	x1, sp, #40
 	mov	w0, #1                          // =0x1
 	bl	clock_gettime
 .LBB0_33:
-	add	x1, sp, #8
+	add	x1, sp, #24
 	mov	w0, #1                          // =0x1
 	bl	clock_gettime
-	ldp	x8, x9, [sp, #8]
-	ldp	x10, x11, [sp, #24]
-	fcvt	d0, s8
+	ldp	x8, x9, [sp, #24]
 	adrp	x0, .L.str.4
 	add	x0, x0, :lo12:.L.str.4
+	ldp	x10, x11, [sp, #40]
 	sub	x8, x8, x10
-	scvtf	d1, x8
-	sub	x8, x9, x11
-	scvtf	d2, x8
-	mov	x8, #225833675390976            // =0xcd6500000000
-	movk	x8, #16845, lsl #48
-	fmov	d3, x8
-	fmadd	d1, d1, d3, d2
-	fdiv	d1, d1, d9
+	mov	x10, #225833675390976           // =0xcd6500000000
+	sub	x9, x9, x11
+	movk	x10, #16845, lsl #48
+	scvtf	d0, x8
+	scvtf	d1, x9
+	fmov	d2, x10
+	fmadd	d0, d0, d2, d1
+	fdiv	d1, d0, d9
+	fcvt	d0, s8
 	bl	printf
 	mov	w0, wzr
 	add	sp, sp, #3, lsl #12             // =12288
-	add	sp, sp, #3760
+	add	sp, sp, #3776
 	.cfi_def_cfa wsp, 112
 	ldp	x20, x19, [sp, #96]             // 16-byte Folded Reload
 	ldp	x22, x21, [sp, #80]             // 16-byte Folded Reload

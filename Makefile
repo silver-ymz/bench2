@@ -1,5 +1,5 @@
 CC=clang-17
-CFLAGS=-Wall -O3 -march=armv8-a+sve
+CFLAGS=-Wall -O3 -mcpu=neoverse-v1
 
 all: main lib.s main.s
 

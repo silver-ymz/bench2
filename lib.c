@@ -81,7 +81,6 @@ float v_sparse_dot_sve(uint32_t *lhs_idx, uint32_t *rhs_idx, float *lhs_val,
     svuint32_t idx_l = svld1_u32(svptrue_b32(), lhs_idx + lhs_pos);
     svbool_t m_l = svpfalse();
     size_t i_r = 0;
-#pragma unroll(8)
     for (size_t i = 0; i < chunk; i++) {
       svuint32_t tmp_r = svdup_u32(rhs_idx[rhs_pos + i]);
       svbool_t p = svcmpeq_u32(svptrue_b32(), tmp_r, idx_l);

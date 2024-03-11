@@ -424,14 +424,10 @@ v_sparse_dot_omp:                       // @v_sparse_dot_omp
 v_sparse_dot_sve:                       // @v_sparse_dot_sve
 	.cfi_startproc
 // %bb.0:
-	sub	sp, sp, #288
-	.cfi_def_cfa_offset 288
+	sub	sp, sp, #272
+	.cfi_def_cfa_offset 272
 	str	x29, [sp, #256]                 // 8-byte Folded Spill
-	stp	x20, x19, [sp, #272]            // 16-byte Folded Spill
-	.cfi_offset w19, -8
-	.cfi_offset w20, -16
-	.cfi_offset w29, -32
-	.cfi_remember_state
+	.cfi_offset w29, -16
 	cntw	x10
 	ptrue	p0.s
 	neg	x8, x10
@@ -439,19 +435,75 @@ v_sparse_dot_sve:                       // @v_sparse_dot_sve
 	and	x12, x8, x5
 	cmp	x11, #0
 	ccmp	x12, #0, #4, ne
-	b.ne	.LBB2_12
+	b.ne	.LBB2_2
 // %bb.1:
 	mov	x9, xzr
 	mov	x8, xzr
 	mov	z0.s, #0                        // =0x0
+	b	.LBB2_9
 .LBB2_2:
+	mov	x8, xzr
+	mov	x9, xzr
+	mov	x13, sp
+	ptrue	p1.b
+	mov	z0.s, #0                        // =0x0
+	pfalse	p2.b
+.LBB2_3:                                // =>This Loop Header: Depth=1
+                                        //     Child Loop BB2_5 Depth 2
+	ld1w	{ z1.s }, p0/z, [x0, x8, lsl #2]
+	mov	x14, xzr
+	mov	x15, xzr
+	add	x16, x1, x9, lsl #2
+	mov	p3.b, p2.b
+	b	.LBB2_5
+.LBB2_4:                                //   in Loop: Header=BB2_5 Depth=2
+	add	x15, x15, #1
+	orr	p3.b, p1/z, p3.b, p4.b
+	cmp	x10, x15
+	b.eq	.LBB2_7
+.LBB2_5:                                //   Parent Loop BB2_3 Depth=1
+                                        // =>  This Inner Loop Header: Depth=2
+	add	x17, x16, x15, lsl #2
+	ld1rw	{ z2.s }, p0/z, [x17]
+	cmpeq	p4.s, p1/z, z2.s, z1.s
+	ptest	p1, p4.b
+	b.eq	.LBB2_4
+// %bb.6:                               //   in Loop: Header=BB2_5 Depth=2
+	add	x17, x14, #1
+	str	w15, [x13, x14, lsl #2]
+	mov	x14, x17
+	b	.LBB2_4
+.LBB2_7:                                //   in Loop: Header=BB2_3 Depth=1
+	add	x15, x8, x10
+	add	x16, x9, x10
+	whilelo	p4.s, xzr, x14
+	add	x17, x0, x15, lsl #2
+	add	x14, x1, x16, lsl #2
+	ld1w	{ z1.s }, p4/z, [x13]
+	ld1w	{ z2.s }, p0/z, [x2, x8, lsl #2]
+	ld1w	{ z3.s }, p0/z, [x3, x9, lsl #2]
+	ldur	w17, [x17, #-4]
+	ldur	w14, [x14, #-4]
+	compact	z2.s, p3, z2.s
+	tbl	z1.s, { z3.s }, z1.s
+	cmp	w17, w14
+	fmla	z0.s, p1/m, z2.s, z1.s
+	csel	x8, x8, x15, hi
+	csel	x9, x9, x16, lo
+	csel	x8, x15, x8, lo
+	cmp	x8, x11
+	b.hs	.LBB2_9
+// %bb.8:                               //   in Loop: Header=BB2_3 Depth=1
+	cmp	x9, x12
+	b.lo	.LBB2_3
+.LBB2_9:
 	movi	d1, #0000000000000000
 	subs	x10, x5, x9
-	b.eq	.LBB2_11
-// %bb.3:
+	b.eq	.LBB2_18
+// %bb.10:
 	cmp	x4, x8
-	b.eq	.LBB2_11
-// %bb.4:
+	b.eq	.LBB2_18
+// %bb.11:
 	lsl	x14, x8, #2
 	lsl	x15, x9, #2
 	mov	x11, xzr
@@ -461,248 +513,39 @@ v_sparse_dot_sve:                       // @v_sparse_dot_sve
 	add	x14, x2, x14
 	add	x15, x3, x15
 	sub	x8, x4, x8
-.LBB2_5:                                // =>This Inner Loop Header: Depth=1
+.LBB2_12:                               // =>This Inner Loop Header: Depth=1
 	ldr	w16, [x9, x12, lsl #2]
 	ldr	w17, [x13, x11, lsl #2]
 	cmp	w16, w17
-	b.ne	.LBB2_7
-// %bb.6:                               //   in Loop: Header=BB2_5 Depth=1
+	b.ne	.LBB2_14
+// %bb.13:                              //   in Loop: Header=BB2_12 Depth=1
 	ldr	s2, [x14, x12, lsl #2]
 	add	x12, x12, #1
 	ldr	s3, [x15, x11, lsl #2]
 	fmadd	s1, s2, s3, s1
-	b	.LBB2_9
-.LBB2_7:                                //   in Loop: Header=BB2_5 Depth=1
-	b.hs	.LBB2_9
-// %bb.8:                               //   in Loop: Header=BB2_5 Depth=1
+	b	.LBB2_16
+.LBB2_14:                               //   in Loop: Header=BB2_12 Depth=1
+	b.hs	.LBB2_16
+// %bb.15:                              //   in Loop: Header=BB2_12 Depth=1
 	add	x12, x12, #1
 	cmp	x12, x8
-	b.lo	.LBB2_10
-	b	.LBB2_11
-.LBB2_9:                                //   in Loop: Header=BB2_5 Depth=1
+	b.lo	.LBB2_17
+	b	.LBB2_18
+.LBB2_16:                               //   in Loop: Header=BB2_12 Depth=1
 	add	x11, x11, #1
 	cmp	x12, x8
-	b.hs	.LBB2_11
-.LBB2_10:                               //   in Loop: Header=BB2_5 Depth=1
+	b.hs	.LBB2_18
+.LBB2_17:                               //   in Loop: Header=BB2_12 Depth=1
 	cmp	x11, x10
-	b.lo	.LBB2_5
-.LBB2_11:
-	ldp	x20, x19, [sp, #272]            // 16-byte Folded Reload
-	faddv	s0, p0, z0.s
+	b.lo	.LBB2_12
+.LBB2_18:
 	ldr	x29, [sp, #256]                 // 8-byte Folded Reload
+	faddv	s0, p0, z0.s
 	fadd	s0, s1, s0
-	add	sp, sp, #288
+	add	sp, sp, #272
 	.cfi_def_cfa_offset 0
-	.cfi_restore w19
-	.cfi_restore w20
 	.cfi_restore w29
 	ret
-.LBB2_12:
-	.cfi_restore_state
-	rdvl	x13, #1
-	mov	x8, xzr
-	mov	x9, xzr
-	lsr	x13, x13, #4
-	and	x14, x10, #0x4
-	and	x15, x10, #0x78
-	add	x16, x1, #16
-	mov	x17, sp
-	ptrue	p1.b
-	mov	z0.s, #0                        // =0x0
-	pfalse	p2.b
-.LBB2_13:                               // =>This Loop Header: Depth=1
-                                        //     Child Loop BB2_20 Depth 2
-                                        //     Child Loop BB2_38 Depth 2
-	ld1w	{ z1.s }, p0/z, [x0, x8, lsl #2]
-	cmp	x13, #2
-	b.hs	.LBB2_18
-// %bb.14:                              //   in Loop: Header=BB2_13 Depth=1
-	mov	x18, xzr
-	mov	x6, xzr
-	mov	p3.b, p2.b
-.LBB2_15:                               //   in Loop: Header=BB2_13 Depth=1
-	cbnz	x14, .LBB2_36
-.LBB2_16:                               //   in Loop: Header=BB2_13 Depth=1
-	add	x6, x8, x10
-	add	x7, x9, x10
-	whilelo	p4.s, xzr, x18
-	add	x19, x0, x6, lsl #2
-	add	x18, x1, x7, lsl #2
-	ld1w	{ z1.s }, p4/z, [x17]
-	ld1w	{ z2.s }, p0/z, [x2, x8, lsl #2]
-	ld1w	{ z3.s }, p0/z, [x3, x9, lsl #2]
-	ldur	w19, [x19, #-4]
-	ldur	w18, [x18, #-4]
-	compact	z2.s, p3, z2.s
-	tbl	z1.s, { z3.s }, z1.s
-	cmp	w19, w18
-	fmla	z0.s, p1/m, z2.s, z1.s
-	csel	x8, x8, x6, hi
-	csel	x9, x9, x7, lo
-	csel	x8, x6, x8, lo
-	cmp	x8, x11
-	b.hs	.LBB2_2
-// %bb.17:                              //   in Loop: Header=BB2_13 Depth=1
-	cmp	x9, x12
-	b.lo	.LBB2_13
-	b	.LBB2_2
-.LBB2_18:                               //   in Loop: Header=BB2_13 Depth=1
-	mov	x18, xzr
-	mov	x6, xzr
-	add	x7, x16, x9, lsl #2
-	mov	p3.b, p2.b
-	b	.LBB2_20
-.LBB2_19:                               //   in Loop: Header=BB2_20 Depth=2
-	orr	p3.b, p1/z, p3.b, p4.b
-	add	x6, x6, #8
-	orr	p3.b, p1/z, p3.b, p5.b
-	add	x7, x7, #32
-	orr	p3.b, p1/z, p3.b, p6.b
-	cmp	x15, x6
-	orr	p3.b, p1/z, p3.b, p7.b
-	orr	p3.b, p1/z, p3.b, p8.b
-	orr	p3.b, p1/z, p3.b, p9.b
-	orr	p3.b, p1/z, p3.b, p10.b
-	orr	p3.b, p1/z, p3.b, p11.b
-	b.eq	.LBB2_15
-.LBB2_20:                               //   Parent Loop BB2_13 Depth=1
-                                        // =>  This Inner Loop Header: Depth=2
-	sub	x19, x7, #16
-	ld1rw	{ z2.s }, p0/z, [x19]
-	cmpeq	p4.s, p1/z, z2.s, z1.s
-	ptest	p1, p4.b
-	b.ne	.LBB2_28
-// %bb.21:                              //   in Loop: Header=BB2_20 Depth=2
-	sub	x19, x7, #12
-	ld1rw	{ z2.s }, p0/z, [x19]
-	cmpeq	p5.s, p1/z, z2.s, z1.s
-	ptest	p1, p5.b
-	b.ne	.LBB2_29
-.LBB2_22:                               //   in Loop: Header=BB2_20 Depth=2
-	sub	x19, x7, #8
-	ld1rw	{ z2.s }, p0/z, [x19]
-	cmpeq	p6.s, p1/z, z2.s, z1.s
-	ptest	p1, p6.b
-	b.ne	.LBB2_30
-.LBB2_23:                               //   in Loop: Header=BB2_20 Depth=2
-	sub	x19, x7, #4
-	ld1rw	{ z2.s }, p0/z, [x19]
-	cmpeq	p7.s, p1/z, z2.s, z1.s
-	ptest	p1, p7.b
-	b.ne	.LBB2_31
-.LBB2_24:                               //   in Loop: Header=BB2_20 Depth=2
-	ld1rw	{ z2.s }, p0/z, [x7]
-	cmpeq	p8.s, p1/z, z2.s, z1.s
-	ptest	p1, p8.b
-	b.ne	.LBB2_32
-.LBB2_25:                               //   in Loop: Header=BB2_20 Depth=2
-	ld1rw	{ z2.s }, p0/z, [x7, #4]
-	cmpeq	p9.s, p1/z, z2.s, z1.s
-	ptest	p1, p9.b
-	b.ne	.LBB2_33
-.LBB2_26:                               //   in Loop: Header=BB2_20 Depth=2
-	ld1rw	{ z2.s }, p0/z, [x7, #8]
-	cmpeq	p10.s, p1/z, z2.s, z1.s
-	ptest	p1, p10.b
-	b.ne	.LBB2_34
-.LBB2_27:                               //   in Loop: Header=BB2_20 Depth=2
-	ld1rw	{ z2.s }, p0/z, [x7, #12]
-	cmpeq	p11.s, p1/z, z2.s, z1.s
-	ptest	p1, p11.b
-	b.eq	.LBB2_19
-	b	.LBB2_35
-.LBB2_28:                               //   in Loop: Header=BB2_20 Depth=2
-	add	x19, x18, #1
-	str	w6, [x17, x18, lsl #2]
-	mov	x18, x19
-	sub	x19, x7, #12
-	ld1rw	{ z2.s }, p0/z, [x19]
-	cmpeq	p5.s, p1/z, z2.s, z1.s
-	ptest	p1, p5.b
-	b.eq	.LBB2_22
-.LBB2_29:                               //   in Loop: Header=BB2_20 Depth=2
-	add	w20, w6, #1
-	add	x19, x18, #1
-	str	w20, [x17, x18, lsl #2]
-	mov	x18, x19
-	sub	x19, x7, #8
-	ld1rw	{ z2.s }, p0/z, [x19]
-	cmpeq	p6.s, p1/z, z2.s, z1.s
-	ptest	p1, p6.b
-	b.eq	.LBB2_23
-.LBB2_30:                               //   in Loop: Header=BB2_20 Depth=2
-	add	w20, w6, #2
-	add	x19, x18, #1
-	str	w20, [x17, x18, lsl #2]
-	mov	x18, x19
-	sub	x19, x7, #4
-	ld1rw	{ z2.s }, p0/z, [x19]
-	cmpeq	p7.s, p1/z, z2.s, z1.s
-	ptest	p1, p7.b
-	b.eq	.LBB2_24
-.LBB2_31:                               //   in Loop: Header=BB2_20 Depth=2
-	add	w20, w6, #3
-	add	x19, x18, #1
-	str	w20, [x17, x18, lsl #2]
-	mov	x18, x19
-	ld1rw	{ z2.s }, p0/z, [x7]
-	cmpeq	p8.s, p1/z, z2.s, z1.s
-	ptest	p1, p8.b
-	b.eq	.LBB2_25
-.LBB2_32:                               //   in Loop: Header=BB2_20 Depth=2
-	add	w20, w6, #4
-	add	x19, x18, #1
-	str	w20, [x17, x18, lsl #2]
-	mov	x18, x19
-	ld1rw	{ z2.s }, p0/z, [x7, #4]
-	cmpeq	p9.s, p1/z, z2.s, z1.s
-	ptest	p1, p9.b
-	b.eq	.LBB2_26
-.LBB2_33:                               //   in Loop: Header=BB2_20 Depth=2
-	add	w20, w6, #5
-	add	x19, x18, #1
-	str	w20, [x17, x18, lsl #2]
-	mov	x18, x19
-	ld1rw	{ z2.s }, p0/z, [x7, #8]
-	cmpeq	p10.s, p1/z, z2.s, z1.s
-	ptest	p1, p10.b
-	b.eq	.LBB2_27
-.LBB2_34:                               //   in Loop: Header=BB2_20 Depth=2
-	add	w20, w6, #6
-	add	x19, x18, #1
-	str	w20, [x17, x18, lsl #2]
-	mov	x18, x19
-	ld1rw	{ z2.s }, p0/z, [x7, #12]
-	cmpeq	p11.s, p1/z, z2.s, z1.s
-	ptest	p1, p11.b
-	b.eq	.LBB2_19
-.LBB2_35:                               //   in Loop: Header=BB2_20 Depth=2
-	add	w20, w6, #7
-	add	x19, x18, #1
-	str	w20, [x17, x18, lsl #2]
-	mov	x18, x19
-	b	.LBB2_19
-.LBB2_36:                               //   in Loop: Header=BB2_13 Depth=1
-	add	x7, x1, x9, lsl #2
-	mov	x19, x14
-	b	.LBB2_38
-.LBB2_37:                               //   in Loop: Header=BB2_38 Depth=2
-	add	x6, x6, #1
-	subs	x19, x19, #1
-	orr	p3.b, p1/z, p3.b, p4.b
-	b.eq	.LBB2_16
-.LBB2_38:                               //   Parent Loop BB2_13 Depth=1
-                                        // =>  This Inner Loop Header: Depth=2
-	add	x20, x7, x6, lsl #2
-	ld1rw	{ z2.s }, p0/z, [x20]
-	cmpeq	p4.s, p1/z, z2.s, z1.s
-	ptest	p1, p4.b
-	b.eq	.LBB2_37
-// %bb.39:                              //   in Loop: Header=BB2_38 Depth=2
-	add	x20, x18, #1
-	str	w6, [x17, x18, lsl #2]
-	mov	x18, x20
-	b	.LBB2_37
 .Lfunc_end2:
 	.size	v_sparse_dot_sve, .Lfunc_end2-v_sparse_dot_sve
 	.cfi_endproc

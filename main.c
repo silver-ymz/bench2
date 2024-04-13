@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     }
   }
   struct timespec tstart = {0, 0}, tend = {0, 0};
-  float xy;
+  float xy = 0;
   for (size_t i = 0; i < iter; i++) {
     xy = v_sparse_dot(lhs_idx, rhs_idx, lhs_val, rhs_val, idx_l, idx_r);
   }

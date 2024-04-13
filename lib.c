@@ -29,10 +29,10 @@ float v_sparse_dot_omp(uint32_t *lhs_idx, uint32_t *rhs_idx, float *lhs_val,
   size_t lhs_pos = 0, rhs_pos = 0, lhs_loop_len = lhs_len / chunk * chunk,
          rhs_loop_len = rhs_len / chunk * chunk;
   float buff_l[chunk], buff_r[chunk], xy = 0;
-#pragma omp parallel for reduction(+ : xy)
+#pragma omp parallel reduction(+ : xy)
   while (lhs_pos < lhs_loop_len && rhs_pos < rhs_loop_len) {
     uint8_t m1 = 0, m2 = 0;
-#pragma omp reduction(| : m1) reduction(| : m2)
+#pragma omp simd reduction(| : m1) reduction(| : m2)
     for (size_t i = 0; i < chunk; i++) {
       for (size_t j = 0; j < chunk; j++) {
         uint8_t res = lhs_idx[lhs_pos + i] == rhs_idx[rhs_pos + j];
